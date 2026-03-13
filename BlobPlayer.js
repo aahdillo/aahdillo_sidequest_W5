@@ -6,21 +6,16 @@ class BlobPlayer {
     this.vx = 0;
     this.vy = 0;
 
-    this.accel = 0.55;
-    this.maxRun = 4.0;
+    this.accel = 0.4;
+    this.maxRun = 3.5;
 
-    this.gravity = 0.65;
-    this.jumpV = -11.0;
-
-    this.frictionAir = 0.995;
-    this.frictionGround = 0.88;
-
-    this.onGround = false;
+    this.gravity = 0.5;
+    this.frictionAir = 0.98;
 
     // wobble visuals
     this.t = 0;
     this.tSpeed = 0.01;
-    this.wobble = 7;
+    this.wobble = 6;
     this.points = 48;
     this.wobbleFreq = 0.9;
   }
@@ -32,10 +27,8 @@ class BlobPlayer {
 
     this.vx = 0;
     this.vy = 0;
-    this.onGround = false;
 
     this.gravity = level.gravity;
-    this.jumpV = level.jumpV;
   }
 
   tryJump() {
@@ -52,10 +45,17 @@ class BlobPlayer {
     if (keyIsDown(68) || keyIsDown(RIGHT_ARROW)) move += 1;
 
     this.vx += this.accel * move;
-    this.vx *= this.onGround ? this.frictionGround : this.frictionAir;
+    this.vx *= this.frictionAir;
     this.vx = constrain(this.vx, -this.maxRun, this.maxRun);
 
     this.vy += this.gravity;
+
+    if (keyIsDown(32)) {
+      this.vy -= 1.2;
+    }
+
+    this.vy *= 0.98;
+    this.vy = constrain(this.vy, -6, 8);
 
     // collider box
     let box = {
@@ -77,17 +77,15 @@ class BlobPlayer {
 
     // move Y
     box.y += this.vy;
-    this.onGround = false;
     for (const s of level.platforms) {
       if (BlobPlayer.overlap(box, s)) {
         if (this.vy > 0) {
           box.y = s.y - box.h;
           this.vy = 0;
-          this.onGround = true;
         } else if (this.vy < 0) {
           box.y = s.y + s.h;
-          this.vy = 0;
         }
+        this.vy = 0;
       }
     }
 
@@ -104,18 +102,22 @@ class BlobPlayer {
   draw(colHex) {
     fill(color(colHex));
     noStroke();
+    push();
+    translate(this.x, this.y);
+    rotate(map(this.vy, -6, 6, -0.3, 0.3));
     beginShape();
     for (let i = 0; i < this.points; i++) {
       const a = (i / this.points) * TAU;
       const n = noise(
         cos(a) * this.wobbleFreq + 100,
         sin(a) * this.wobbleFreq + 100,
-        this.t,
+        this.t
       );
       const rr = this.r + map(n, 0, 1, -this.wobble, this.wobble);
-      vertex(this.x + cos(a) * rr, this.y + sin(a) * rr);
+      vertex(cos(a) * rr, sin(a) * rr);
     }
     endShape(CLOSE);
+    pop();
   }
 
   static overlap(a, b) {

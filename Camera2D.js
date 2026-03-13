@@ -5,17 +5,13 @@ class Camera2D {
     this.x = 0;
     this.y = 0;
   }
-
-  followSideScrollerX(targetX, lerpAmt) {
-    const desired = targetX - this.viewW / 2;
-    this.x = lerp(this.x, desired, lerpAmt);
+  update() {
+    this.x += 2;
   }
 
   clampToWorld(worldW, worldH) {
     const maxX = max(0, worldW - this.viewW);
-    const maxY = max(0, worldH - this.viewH);
     this.x = constrain(this.x, 0, maxX);
-    this.y = constrain(this.y, 0, maxY);
   }
 
   begin() {

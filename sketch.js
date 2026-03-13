@@ -20,11 +20,11 @@ const VIEW_W = 800;
 const VIEW_H = 480;
 
 let allLevelsData;
-let levelIndex = 0;
 
 let level;
 let player;
 let cam;
+let score = 0;
 
 function preload() {
   allLevelsData = loadJSON("levels.json"); // levels.json beside index.html [web:122]
@@ -32,11 +32,9 @@ function preload() {
 
 function setup() {
   createCanvas(VIEW_W, VIEW_H);
-  textFont("sans-serif");
-  textSize(14);
 
   cam = new Camera2D(width, height);
-  loadLevel(levelIndex);
+  loadLevel(0);
 }
 
 function loadLevel(i) {
@@ -45,25 +43,22 @@ function loadLevel(i) {
   player = new BlobPlayer();
   player.spawnFromLevel(level);
 
-  cam.x = player.x - width / 2;
-  cam.y = 0;
-  cam.clampToWorld(level.w, level.h);
+  cam.x = 0;
 }
 
 function draw() {
   // --- game state ---
   player.update(level);
+  cam.update();
+  cam.clampToWorld(level.w, level.h);
 
   // Fall death → respawn
-  if (player.y - player.r > level.deathY) {
-    loadLevel(levelIndex);
-    return;
+  if (player.y - player.r > level.deathY || player.y + player.r < 0) {
+    loadLevel(0);
   }
 
-  // --- view state (data-driven smoothing) ---
-  cam.followSideScrollerX(player.x, level.camLerp);
-  cam.y = 0;
-  cam.clampToWorld(level.w, level.h);
+  // --- score ---
+  score = floor(cam.x / 100);
 
   // --- draw ---
   cam.begin();
@@ -75,27 +70,9 @@ function draw() {
   fill(0);
   noStroke();
   text(level.name + " (Example 5)", 10, 18);
-  text("A/D or ←/→ move • Space/W/↑ jump • Fall = respawn", 10, 36);
+  text("←/→ move • Space up • Fall = respawn", 10, 36);
   text("camLerp(JSON): " + level.camLerp + "  world.w: " + level.w, 10, 54);
   text("cam: " + cam.x + ", " + cam.y, 10, 90);
   const p0 = level.platforms[0];
   text(`p0: x=${p0.x} y=${p0.y} w=${p0.w} h=${p0.h}`, 10, 108);
-
-  text(
-    "platforms: " +
-      level.platforms.length +
-      " start: " +
-      level.start.x +
-      "," +
-      level.start.y,
-    10,
-    72,
-  );
-}
-
-function keyPressed() {
-  if (key === " " || key === "W" || key === "w" || keyCode === UP_ARROW) {
-    player.tryJump();
-  }
-  if (key === "r" || key === "R") loadLevel(levelIndex);
 }
